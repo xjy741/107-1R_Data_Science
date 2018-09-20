@@ -1,17 +1,17 @@
-## WEEK1
+# WEEK1
 
-# Assigment
+## Assigment
 course_1  
 practice_1.R  
 practice_2.R  
 practice_3.R  
 hw_1_question.R  
 Progress  
-# In class
+## In class
 
 day off because sick
 
-# At home
+## At home
 
 Read Class PPT  
 Finish homework  
