@@ -1,0 +1,20 @@
+---
+title: "Untitled"
+author: "PoJenYo"
+date: "2018920"
+output: html_document
+---
+
+```{r}
+library(rvest)
+library(xml2)
+url = "http://www.nba.com/teams/hawks"
+res = read_html(url)
+name = res%>% html_nodes("p.nba-player-index__name")%>% html_text()
+detail = res%>%html_nodes("div.nba-player-index__details")%>% html_text()
+#nba.team.name=raw.tiltles[1]%>% html_text()
+nba.df <- data.frame(name, detail)
+print(nba.df)
+
+```
+
