@@ -1,7 +1,7 @@
 ---
 title: "hw_2_fixed"
 author: "PoJenYo"
-date: "2018爛9堎24"
+date: "2018924"
 output: html_document
 ---
 # Get NBA data
