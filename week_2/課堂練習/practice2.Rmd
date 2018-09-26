@@ -17,4 +17,3 @@ nba.df <- data.frame(name, detail)
 print(nba.df)
 
 ```
-
