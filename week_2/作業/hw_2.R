@@ -1,15 +1,3 @@
----
-title: "hw_2_fixed"
-author: "PoJenYo"
-date: "2018爛9堎24"
-output: html_document
----
-# Get NBA data
-
-(have a problem present Simplified Chinese)
-
-
-```{r}
 library(rvest)
 library(xml2)
 library(magrittr)
@@ -19,7 +7,6 @@ base_url1 =  "http://www.stat-nba.com/award.php?item=13&keyItem="
 item = "per"
 base_url2 = "&keyTable=advanced&isnba=1&season="
 year= "-1"
-url = paste(base_url1, item, base_url2, year, sep="")
 res = read_html(url)
 name = res%>% html_nodes("td")%>%html_text()
 indexs = res%>% html_nodes("th")%>%html_text()
@@ -30,20 +17,6 @@ indexs[1]="num"
 name = matrix(name, ncol = 24 , byrow = TRUE)
 name = data.frame(name)
 colnames(name) = indexs
-
-name
-
-```
-
-## Make function
-
-item year as string
-
-
-
-```{r}
-##year -1 represent history 2017 represent 2017....
-##item = per ortg  ws....
 
 nba_data = function(year,item){
   base_url1 =  "http://www.stat-nba.com/award.php?item=13&keyItem="
@@ -60,24 +33,3 @@ nba_data = function(year,item){
   name = data.frame(name)
   colnames(name) = indexs
   return(name)
-}
-```
-## Test Function
-
-
-case1
-
-
-
-```{r}
-nba_data("2017","per")
-```
-
-
-
-
-
-```{r}
-nba_data("2017","ws")
-
-```

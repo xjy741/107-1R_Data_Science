@@ -1,26 +1,9 @@
-107資料科學程式設計
+107資料程式設計
 ===
 
-## Week1
-
-**上課進度**
-- 看醫生缺席
+## 學生游博任
 
 
-**回家進度**
-- 翻閱課堂講義
-- 完成所有指定作業
 
-
-## Week2
-
-
-**上課進度**
-- 介紹R Markdown
-- 介紹　rvest
-- 完成課堂練習
-
-
-**回家進度**
-- 觀課課後補充資料
-- 完成爬蟲作業(檢體中文)
+- [第一周](https://github.com/xjy741/107-1R_Data_Science/tree/master/week_1) 基本操作
+- [第二周](https://github.com/xjy741/107-1R_Data_Science/tree/master/week_2) 網頁爬蟲
