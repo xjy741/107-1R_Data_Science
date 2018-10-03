@@ -1,0 +1,125 @@
+---
+title: "Untitled"
+author: "PoJenYo"
+date: "2018年10月4日"
+output: html_document
+---
+## NBA 每周最佳球員資料
+
+首先我們先讀入資料
+
+
+
+```{r}
+library(ggplot2)
+data = read.csv("D:/code work/hw3/NBA_player_of_the_week.csv")
+
+print(head(data))
+```
+## 全盛期
+
+
+接下來我們想要了解到對於這些明星球員而言全盛期到底是甚麼時候
+我們利用長條圖達成我們的條件
+
+
+```{r}
+ggplot(data = data, aes(x = Age)) +
+  geom_histogram(binwidth = 0.5) + 
+  xlab("Age") + ylab("Total") + 
+  ggtitle("Age of players of the week") 
+
+```
+我們發現對於這些明星球員而言，最容易拿到單周最佳球員的年紀為25歲左右，但在25到30前都為高峰期
+但我們也懷疑這可能是因為早期球員的保養不易，所以球齡較短有關，為了驗證我們的說法，我們觀察年齡與賽季的箱型圖
+
+## 全盛期與賽季
+
+```{r}
+ggplot(data = data, aes(x= Season.short, y= Age, fill=Season)) + geom_boxplot()
+```
+
+這是一張非常有趣的圖，我們可以發現在2000左右到2018好像不太符合我們的假說，若以中位數而言，
+但若以1990年的第三四分位與上影線位置可以發現在這段時間上影線有變長的趨勢，
+我們懷疑在2000年左右正好為上一代超級明星的換血期，所以2000年後這一世代退休，才有整體往下的趨勢。
+也許我們利用全部球員資料可以更完整表現整個聯盟的特質。
+
+## 位置
+
+
+我們觀察一下每個位置得到單周最佳球員的次數。
+
+但我們要對這些位置經由一下適當的轉化成五個位置，方便我們分析。
+這裡的問題是還沒研究出apply的使用 所以使用迴圈
+
+```{r}
+change_position = function(str_pos){
+  if (i =="F-C"){
+    return("C")
+  }
+  if (i =="FC"){
+    return("PF")
+  }
+  if (i =="F-C"){
+    return("PF")
+  }
+  if (i =="F"){
+    return("SF")
+  }
+  if (i =="GF"){
+    return("SG")
+  }
+  if (i =="G-F"){
+    return("SG")
+  }
+  if (i =="G"){
+    return("PG")
+  }
+  return(i)
+}
+
+
+j=0
+for( i in data[,7]){
+  j = j+1
+  data[j,7] = change_position(i)
+}
+
+ggplot(data = data, aes(x = Position)) +
+  geom_bar() + 
+  xlab("pos") + ylab("Total") + 
+  ggtitle("Position of players of the week") 
+```
+
+整體而言，PG較容易得到當周最佳球員，緊接是小前鋒的位置，但同樣的我們想要看看這些年明星位置的更動。
+這裡我們選用一個比較有趣的圖來進行分析，稱violin plot。
+```{r}
+ggplot(data = data, aes(x = Position, y = Season.short )) + geom_violin()
+```
+這個圖同樣也是很有趣的圖他可以發現各個位置的消長，
+1990左右Michael Jordan的時代("SG占比較高")到1995左右四大中鋒宰制球場(C較高)。
+但2000年以後，有許多傳奇大前鋒(PF)的興起與2010後的明星小前鋒與攻擊型後衛時代(SF與PG較高)
+
+## 球隊
+
+最後我們觀察球隊與當周球員的關係。
+```{r}
+
+
+ggplot(data = data, aes(x = Team,fill = Team)) + geom_bar()
+```
+
+
+我們可以發現最高的為湖人與公牛與馬刺，大致上與這段期間的戰力非常一致。
+
+
+## 小結
+
+整體而言，當周球員的資料所能提供的資訊，比我想像中還要來的高與有趣。
+若有一些基本數據或是將身高與體重處理好，應能有更多發現。
+
+
+
+
+
+
