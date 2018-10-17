@@ -1,0 +1,178 @@
+---
+title: "hw5"
+author: "PoJenYo"
+date: "2018年10月17日"
+output: html_document
+---
+
+##  HW5
+因為沒有甚麼特別的想法，
+所以本次作業的只要就是依照課程網頁的ppt爬取內容，但我們讀取的資料是股版資料。
+首先我們利用R存取的資料，讀取進入markdown，並對於資料做初步的刪減。
+
+```{r}
+library(bitops)
+library(httr)
+library(RCurl)
+library(XML)
+library(tm)
+
+library(NLP)
+library(tmcn)
+
+library(jiebaRD)
+library(jiebaR)
+library(dplyr)
+library(knitr)
+library(Matrix)
+
+
+d.corpus <- Corpus( DirSource("./DATA") )
+d.corpus <- tm_map(d.corpus, removePunctuation)
+d.corpus <- tm_map(d.corpus, removeNumbers)
+d.corpus <- tm_map(d.corpus, function(word) {
+  gsub("[A-Za-z0-9]", "", word)
+})
+
+
+```
+
+
+將資料分成24小時資料
+```{r}
+mixseg = worker()
+jieba_tokenizer = function(d)
+{
+  unlist( segment(d[[1]], mixseg) )
+}
+seg = lapply(d.corpus, jieba_tokenizer)
+
+count_token = function(d)
+{
+  as.data.frame(table(d))
+}
+tokens = lapply(seg, count_token)
+
+n = length(seg)
+TDM = tokens[[1]]
+colNames <- names(seg)
+colNames <- gsub(".txt", "", colNames)
+for( id in c(2:n) )
+{
+  TDM = merge(TDM, tokens[[id]], by="d", all = TRUE)
+  names(TDM) = c('d', colNames[1:id])
+}
+TDM[is.na(TDM)] <- 0
+library(knitr)
+kable(head(TDM))
+
+
+```
+```{r}
+kable(tail(TDM))
+```
+將已建好的 TDM 轉成 TF-IDF
+
+```{r}
+tf <- apply(as.matrix(TDM[,2:(n+1)]), 2, sum)
+
+library(Matrix)
+idfCal <- function(word_doc)
+{ 
+  log2( n / nnzero(word_doc) ) 
+}
+idf <- apply(as.matrix(TDM[,2:(n+1)]), 1, idfCal)
+
+doc.tfidf <- TDM
+# for(x in 1:nrow(TDM))
+# {
+#   for(y in 2:ncol(TDM))
+#   {
+#     doc.tfidf[x,y] <- (doc.tfidf[x,y] / tf[y]) * idf[x]
+#   }
+# }
+
+tempY = matrix(rep(c(as.matrix(tf)), each = length(idf)), nrow = length(idf))
+tempX = matrix(rep(c(as.matrix(idf)), each = length(tf)), ncol = length(tf), byrow = TRUE)
+doc.tfidf[,2:(n+1)] <- (doc.tfidf[,2:(n+1)] / tempY) * tempX
+
+stopLine = rowSums(doc.tfidf[,2:(n+1)])
+delID = which(stopLine == 0)
+
+kable(head(doc.tfidf[delID,1]))
+
+```
+
+利用tf-idf取得重要字
+```{r}
+TopWords = data.frame()
+for( id in c(1:n) )
+{
+  dayMax = order(doc.tfidf[,id+1], decreasing = TRUE)
+  showResult = t(as.data.frame(doc.tfidf[dayMax[1:5],1]))
+  TopWords = rbind(TopWords, showResult)
+}
+rownames(TopWords) = colnames(doc.tfidf)[2:(n+1)]
+TopWords = droplevels(TopWords)
+kable(TopWords)
+
+
+
+
+```
+因為是短暫時間資料，所以看出那個時候的話題，特別的是八點開盤前，會有漲破、多單等等。
+因為那時候是開盤時間，可以猜測這段時間股市，正在向上。
+
+
+
+TF-IDF Hours 文章取得的重要關鍵字 TDM merge 視覺化
+```{r}
+TDM$d = as.character(TDM$d)
+AllTop = as.data.frame( table(as.matrix(TopWords)) )
+AllTop = AllTop[order(AllTop$Freq, decreasing = TRUE),]
+
+kable(head(AllTop))
+```
+```{r}
+TopNo = 5
+tempGraph = data.frame()
+for( t in c(1:TopNo) )
+{
+  word = matrix( rep(c(as.matrix(AllTop$Var1[t])), each = n), nrow = n )
+  temp = cbind( colnames(doc.tfidf)[2:(n+1)], t(TDM[which(TDM$d == AllTop$Var1[t]), 2:(n+1)]), word )
+  colnames(temp) = c("hour", "freq", "words")
+  tempGraph = rbind(tempGraph, temp)
+  names(tempGraph) = c("hour", "freq", "words")
+}
+
+library(ggplot2)
+library(varhandle)
+tempGraph$freq = unfactor(tempGraph$freq)
+ggplot(tempGraph, aes(hour, freq)) + 
+  geom_point(aes(color = words, shape = words), size = 5) +
+  geom_line(aes(group = words, linetype = words))
+```
+
+
+
+
+因為主要是股市版資料，所以有關出場、多單等股票用詞，還是偏多。
+但那時候也是熱烈討論大豆戰爭，所以大豆也在上面。
+
+
+
+
+接著我用每個小時的發文量作圖。
+```{r}
+filenames = as.array(paste0("./DATA/",colnames(doc.tfidf)[2:(n+1)],".txt"))
+sizeResult = apply(filenames, 1, file.size) / 1024
+showSize = data.frame(colnames(doc.tfidf)[2:(n+1)], sizeResult)
+names(showSize) = c("hour", "size_KB")
+
+ggplot(showSize, aes(x = hour, y = size_KB)) + geom_bar(stat="identity")
+```
+
+這個圖可以發現，開盤前與收盤後的時間點是訊息量最大的時期，但同樣的在午餐前、晚餐、還有睡前也有升高的情形。
+也可以代表大家對於甚麼時候比較長吸收投資有關的訊息。
+
+
