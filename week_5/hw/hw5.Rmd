@@ -176,3 +176,29 @@ ggplot(showSize, aes(x = hour, y = size_KB)) + geom_bar(stat="identity")
 也可以代表大家對於甚麼時候比較長吸收投資有關的訊息。
 
 
+]
+```{r}
+library(RColorBrewer)
+library(cluster)
+library(xtable)
+library(pvclust)
+library(plyr)
+library(car)
+library(lattice)
+library(ggplot2)
+names(doc.tfidf) = c(0:24)
+
+pcs = prcomp(t((doc.tfidf[,2:25])[SelectVar[, colSums(abs(SelectVar)) ! == 0]]),center =  F , scale = F ,rank = 2 )
+
+#plot(log(pcs[["x"]][,1]), pcs[["x"]][,2])
+x = pcs[["x"]][,1]
+y = pcs[["x"]][,2]
+
+ggplot(pcs[["X"]], aes(x = pcs[["x"]][,1], y = pcs[["x"]][,2])) + geom_point(alpha=0.5,size=1,color = c(1:24),legend = c(1:24),shape=21)
+```
+
+
+
+
+
+

@@ -1,0 +1,201 @@
+---
+title: "stock_example"
+author: "PoJenYo"
+date: "2018年11月12日"
+output: html_document
+---
+
+###　引入模組
+
+```{r}
+library(xts)
+library(TTR)
+library(tidyquant)
+library(tidyverse)
+library(matrixStats)
+library(ggrepel)
+```
+
+
+###　建構效率前緣
+
+```{r}
+choose_target<-function(target){
+  target_t = c("Date")
+  for(i in c(1:length(target))){
+    target_t = c(target_t, paste(c("X",target[i],".TW"), collapse=""))
+    
+  }
+  return(target_t)
+  
+}
+target = c("1101", "1102", "1216")
+target = choose_target(target)
+
+print(target)
+
+price = read.csv("Data/tw50_price.csv")[target]
+price_series <- xts(price[,2:(2+length(target)-2)], order.by=as.Date(price[,1]))
+monthly_serie <- to.monthly(price_series, indexAt = "last", OHLC = FALSE)
+price_rr = ROC(x = price_series)
+asset_returns_xts <-na.omit(Return.calculate(monthly_serie, method = "log"))
+```
+
+```{r}
+library(ggplot2)
+cul_rt = data.matrix(colMeans(asset_returns_xts[69:80]))
+cov_m = data.matrix(cov(asset_returns_xts[69:80]))
+weights = runif(4-1)
+weights = matrix(weights/sum(weights))
+
+```
+
+
+```{r}
+cri = "r/s+s"
+
+criteria <- function(rt, st){
+  temp = rt/st+20*rt
+  return(temp)
+  
+}
+
+
+
+```
+
+```{r}
+t_rt = c()
+t_var = c()
+special = 0
+max_sharp=0
+for(i in c(1:5000)){
+  weights = runif(length(target)-1)
+  weights = matrix(weights/sum(weights))
+  rt = sum(cul_rt*weights)
+  t_rt = c(t_rt,rt)
+  var_wei = t(weights) %*% cov_m %*% weights
+  t_var = c(t_var,var_wei**(1/2))
+  temp = criteria(rt, var_wei**(1/2))
+  if(temp>max_sharp){
+    max_sharp = temp
+    opt_w = weights
+    opt_r = rt
+    opt_var = var_wei
+    special = i
+  }
+  
+}
+
+special_list = rep(30, 5000)
+special_list[special]=0
+
+fro_data = data_frame(t_var, t_rt,special_list)
+names(fro_data) <- c("pro_Std", "Return","opt")
+ggplot(data=fro_data, aes(x=pro_Std, y=Return)) + geom_point(color="yellow")+geom_point(data=fro_data[special, ], aes(x=pro_Std, y=Return), colour="red", size=3)
+
+```
+
+
+###　基本資料探索
+
+```{r}
+price = read.csv("Data/tw50_price.csv")
+
+col = names(price)
+target = c()
+for(i in c(2:length(col))){
+  target = c(target, substr(col[i],1,5))
+  
+}
+
+
+
+eps = read.csv("Data/EPS.csv")[target]
+
+div = read.csv("Data/div_data.csv")[target]
+
+current_rt = read.csv("Data/current ratio(%).csv")[target]
+
+hold = read.csv("Data/Stockholding.csv")[target]
+
+
+
+```
+
+
+
+
+```{r}
+eps = tail(eps,4)
+mean_eps = colMeans((eps))
+eps_data = data_frame(names(mean_eps), mean_eps)
+names(eps_data) <- c("code", "Eps")
+ggplot()+geom_boxplot(data = eps_data, aes(x =rep(0, length(mean_eps)),y=Eps),outlier.shape = NA)+scale_y_continuous(limits = quantile(eps_data$Eps, c(0.2, 0.8)))
+```
+
+```{r}
+div = tail(div,1)
+mean_div = colMeans((div))
+div_data = data_frame(names(mean_div), mean_div)
+names(div_data) <- c("code", "div")
+ggplot()+geom_boxplot(data = div_data, aes(x =rep(0, length(mean_div)),y=div),outlier.shape = NA)+scale_y_continuous(limits = quantile(div_data$div, c(0.2, 0.8)))
+
+
+```
+```{r}
+current_rt = tail(current_rt,4)
+mean_current_rt = colMeans((current_rt))
+current_rt_data = data_frame(names(mean_current_rt), mean_current_rt)
+names(current_rt_data) <- c("code", "current_rt")
+
+ggplot() + geom_boxplot(data = current_rt_data
+                        , aes(x = rep(0, length(mean_current_rt)), y= current_rt),outlier.shape = NA)+scale_y_continuous(limits = quantile(current_rt_data$current_rt, c(0.3, 0.7)))
+
+
+```
+
+```{r}
+hold = tail(hold,13)[1:12,]
+mean_hold = colMeans((hold))
+hold_data = data_frame(names(mean_hold), mean_hold)
+names(hold_data) <- c("code", "hold")
+ggplot()+geom_boxplot(data = hold_data, aes(x =rep(0, length(mean_hold)),y=hold))#,outlier.shape = NA)+scale_y_continuous(limits = quantile(hold_data$hold, c(0.2, 0.8)))
+
+
+```
+
+###　pca k_means資料探索
+
+
+```{r}
+price = read.csv("Data/tw50_price.csv")
+price_series <- xts(price[,2:48], order.by=as.Date(price[,1]))
+monthly_series <- to.monthly(price_series, indexAt = "last", OHLC = FALSE)
+asset_returns_xts <-na.omit(Return.calculate(monthly_series, method = "log"))
+asset_returns_xts = tail(asset_returns_xts,12)
+mean_rt = round(colMeans(asset_returns_xts),digit = 3)
+col_std = colSds(asset_returns_xts)
+Sharp_rt = mean_rt/col_std
+
+feature_data = data_frame(names(mean_hold),col_std,mean_hold,mean_eps,mean_div,mean_current_rt)
+
+names(feature_data) = c("code","STD", "Hold", "Eps", "Div", "curr_Rt")
+
+pca <- prcomp(formula = ~ STD+Hold+Eps+Div+curr_Rt, data = feature_data,scale = TRUE)   
+k_author = 4
+
+kmeansData_code = pca$x[,1:2]
+# kmeansData = kmeansData[kmeansData[,1] > -0.05, ]
+
+cl_code <- kmeans(kmeansData_code, k_author)
+kmeansData_code <- as.data.frame(kmeansData_code) 
+kmeansData_code$cl <- as.factor(cl_code$cluster)
+kmeansData_code$code <- feature_data$code
+kmeansData_code$Return <- mean_rt
+kmeansData_code$Sharp <- Sharp_rt
+ggplot(data = kmeansData_code , aes(x = PC1, y=PC2, color = cl, label = Return)) + geom_point()+geom_point(data = kmeansData_code[kmeansData_code["code"]=="X2330",],aes(x = PC1, y=PC2), color = "red",size = 3)
+                                                                                                
+
+```
+

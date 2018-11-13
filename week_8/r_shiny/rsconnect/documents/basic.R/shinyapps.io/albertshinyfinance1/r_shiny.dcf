@@ -1,0 +1,13 @@
+name: r_shiny
+title: r_shiny
+username:
+account: albertshinyfinance1
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 568147
+bundleId: 1698775
+url: https://albertshinyfinance1.shinyapps.io/r_shiny/
+when: 1542129783.02513
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: r_shiny.Rmd
